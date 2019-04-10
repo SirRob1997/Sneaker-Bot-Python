@@ -29,10 +29,10 @@ List of possible parameters:
 * If given, the bot will take the page source after purchasing and save it at the given file path (may be useful for debugging)
 
 <b>--page-load-timeout</b>
-* This is used to limit the page load time (in seconds), which can be useful when the page is still loading, but the UI is nevertheless useable. This is pretty much a necessity as I've noticed Nike's pages hang all the time. I'd recommend using 1-3 seconds for this. 
+* This is used to limit the page load time (in seconds), which can be useful when the page is still loading, but the UI is nevertheless useable (e.g. 4)
 
 <b>--driver-type</b>
-* Should be 'firefox' or 'chrome' (the OS will be determined for you)
+* Should be 'firefox' or 'chrome'
 
 <b>--headless</b>
 * This will run the driver in headless mode, which should make the bot quicker
