@@ -15,7 +15,7 @@ from selenium.webdriver.support import expected_conditions as EC
 NIKE_URL = "https://www.nike.com/de/de_de/"
 LOGGER = logging.getLogger()
 
-def run(driver, username, password, url, shoe_size, login_time = None, release_time=None, page_load_timeout=None, screenshot_path=None, html_path=None, select_payment=False, purchase=False, num_retries=None):
+#def run(driver, username, password, url, shoe_size, login_time = None, release_time=None, page_load_timeout=None, screenshot_path=None, html_path=None, select_payment=False, purchase=False, num_retries=None):
 
 
 def main():
@@ -35,7 +35,7 @@ def main():
     parser.add_argument("--purchase", action="store_true")
     parser.add_argument("--num_retries", type=int, default=1)
     args = parser.parse_args()
-
+    print(args.username)
     driver = None
 
 main()
