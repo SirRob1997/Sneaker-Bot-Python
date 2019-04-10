@@ -37,6 +37,7 @@ logging.config.dictConfig({
 })
 
 NIKE_URL = "https://www.nike.com/de/de_de"
+NIKE_CART_URL = "https://www.nike.com/de/cart"
 LOGGER = logging.getLogger()
 
 def run(driver, username, password, url, shoe_size, login_time = None, release_time=None, page_load_timeout=None, screenshot_path=None, html_path=None, select_payment=False, purchase=False, num_retries=None):
@@ -60,17 +61,52 @@ def run(driver, username, password, url, shoe_size, login_time = None, release_t
 
     #Starting page request process
     num_retries_attempted = 0
-    try:
-        LOGGER.info("Requesting page: " + url)
-        driver.get(url)
-    except TimeoutException:
-        LOGGER.info("Page load timed out but continuing anyway")
 
-    try:
-        select_shoe_size(driver=driver, shoe_size=shoe_size)
-    except Exception as e:
-        # If we fail to select shoe size, try to buy anyway
-        LOGGER.exception("Failed to select shoe size: " + str(e))
+    while True:
+        try:
+            try:
+                LOGGER.info("Requesting page: " + url)
+                driver.get(url)
+            except TimeoutException:
+                LOGGER.info("Page load timed out but continuing anyway")
+
+            try:
+                select_shoe_size(driver=driver, shoe_size=shoe_size)
+                LOGGER.info("Selected size "+ shoe_size +" from dropdown")
+            except Exception as e:
+                # If we fail to select shoe size, try to buy anyway
+                LOGGER.exception("Failed to select shoe size: " + str(e))
+
+            try:
+                click_buy_button(driver=driver)
+                LOGGER.info("Put item in cart")
+            except Exception as e:
+                LOGGER.exception("Failed to click buy button: " + str(e))
+                six.reraise(Exception, e, sys.exc_info()[2])
+
+            try:
+                click_cart_icon(driver=driver)
+                LOGGER.info("Changed view to cart")
+            except Exception as e:
+                LOGGER.exception("Failed to change to cart: " + str(e))
+
+            # if purchase:
+            #     try:
+            #         click_submit_button(driver=driver)
+            #     except Exception as e:
+            #         LOGGER.exception("Failed to click submit button: " + str(e))
+            #         six.reraise(Exception, e, sys.exc_info()[2])
+            #
+            #     LOGGER.info("Purchased shoe")
+            #     break
+
+        except Exception:
+            if num_retries and num_retries_attempted < num_retries:
+                num_retries_attempted += 1
+                continue
+            else:
+                break
+
 
 def login(driver, username, password):
     try:
@@ -133,12 +169,30 @@ def select_shoe_size(driver, shoe_size):
     driver.find_element_by_id("skuAndSize").click()
 
     LOGGER.info("Waiting for size dropdown to appear")
-    wait_until_visible(driver, xpath="//option[text()='{}']".format("EU 40"), duration=10)
+    wait_until_clickable(driver, xpath="//select[@id='skuAndSize']/option", duration=10)
+
 
     LOGGER.info("Selecting size from dropdown")
     driver.find_element_by_id("skuAndSize").find_element_by_xpath("//option[text()='{}']".format(shoe_size)).click()
 
-    LOGGER.info("Selected size "+ shoe_size +" from dropdown")
+def click_buy_button(driver):
+    LOGGER.info("Waiting for buy button to become clickable")
+    wait_until_clickable(driver, xpath="//button[@class='ncss-btn-black fs16-sm ncss-base u-medium pb3-sm prl5-sm pt3-sm css-y0myut addToCartBtn']", duration=10)
+
+    LOGGER.info("Clicking buy button")
+    driver.find_element_by_xpath("//button[@class='ncss-btn-black fs16-sm ncss-base u-medium pb3-sm prl5-sm pt3-sm css-y0myut addToCartBtn']").click()
+
+def click_submit_button(driver):
+    xpath = "//button[text()='Submit Order']"
+
+    LOGGER.info("Waiting for submit button to become clickable")
+    wait_until_clickable(driver, xpath=xpath, duration=10)
+
+    LOGGER.info("Clicking submit button")
+    driver.find_element_by_xpath(xpath).click()
+
+def click_cart_icon(driver):
+    xpath = ""
 
 def main():
     parser = argparse.ArgumentParser(description='Processing input values for run')
