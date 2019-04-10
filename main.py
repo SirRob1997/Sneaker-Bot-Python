@@ -79,10 +79,10 @@ def login(driver, username, password):
         LOGGER.info("Page load timed out but continuing anyway")
 
     LOGGER.info("Waiting for login button to become clickable")
-    wait_until_clickable(driver=driver, xpath="//li[@js-hook='exp-join-login']/button")
+    wait_until_clickable(driver=driver, xpath="//button[@class='nav-btn p0-sm prl3-sm pt2-sm pb2-sm fs12-nav-sm d-sm-b nav-color-grey hover-color-black']")
 
     LOGGER.info("Clicking login button")
-    driver.find_element_by_xpath("//li[@js-hook='exp-join-login']/button").click()
+    driver.find_element_by_xpath("//button[@class='nav-btn p0-sm prl3-sm pt2-sm pb2-sm fs12-nav-sm d-sm-b nav-color-grey hover-color-black']").click()
 
     LOGGER.info("Waiting for login fields to become visible")
     wait_until_visible(driver=driver, xpath="//input[@name='emailAddress']")
@@ -122,11 +122,10 @@ def select_shoe_size(driver, shoe_size):
     driver.find_element_by_id("skuAndSize").click()
 
     LOGGER.info("Waiting for size dropdown to appear")
-    wait_until_visible(driver, class_name="expanded", duration=10)
+    wait_until_visible(driver, xpath="//select/option", duration=10)
 
-    #LOGGER.info("Selecting size from dropdown")
-    #driver.find_element_by_class_name("expanded").find_element_by_xpath(
-        #"//button[text()='{}']".format(shoe_size)).click()
+    LOGGER.info("Selecting size from dropdown")
+    driver.find_element_by_id("skuAndSize").find_element_by_xpath("//option[text()='{}']".format(shoe_size)).click()
 
 def main():
     parser = argparse.ArgumentParser(description='Processing input values for run')
