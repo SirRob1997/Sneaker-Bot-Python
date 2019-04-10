@@ -4,17 +4,17 @@ This bot is used to buy the latest sneakers of the german Nike website (https://
 
 List of possible parameters:
 
-<b>--username</b>
+<b>--username (required)</b>
 * Username for login
 
-<b>--password</b>
+<b>--password (required)</b>
 * Password for login
 
-<b>--url</b>
+<b>--url (required)</b>
 * URL for desired shoe
 
-<b>--shoe-size</b>
-* Self-explanatory (NOTE: this can fail if both women and men sizes are available)
+<b>--shoe-size (required)</b>
+* Shoe size (e.g. EU 40, EU 42)
 
 <b>--login-time</b>
 * If given, the bot will pause until a specific time before it logs in (can be any datetime format)
