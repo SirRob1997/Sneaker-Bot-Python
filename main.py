@@ -11,12 +11,90 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
 
+logging.config.dictConfig({
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "default": {
+            "format": "%(asctime)s [PID %(process)d] [Thread %(thread)d] [%(levelname)s] [%(name)s] %(message)s"
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "level": "INFO",
+            "formatter": "default",
+            "stream": "ext://sys.stdout"
+        }
+    },
+    "root": {
+        "level": "INFO",
+        "handlers": [
+            "console"
+        ]
+    }
+})
 
 NIKE_URL = "https://www.nike.com/de/de_de/"
 LOGGER = logging.getLogger()
 
-#def run(driver, username, password, url, shoe_size, login_time = None, release_time=None, page_load_timeout=None, screenshot_path=None, html_path=None, select_payment=False, purchase=False, num_retries=None):
+def run(driver, username, password, url, shoe_size, login_time = None, release_time=None, page_load_timeout=None, screenshot_path=None, html_path=None, select_payment=False, purchase=False, num_retries=None):
+    driver.maximize_window()
+    driver.set_page_load_timeout(page_load_timeout)
 
+    if login_time:
+        LOGGER.info("Waiting until login time: " + login_time)
+        pause.until(date_parser.parse(login_time))
+
+    try:
+        login(driver=driver, username=username, password=password)
+    except Exception as e:
+        LOGGER.exception("Failed to login: " + str(e))
+        six.reraise(Exception, e, sys.exc_info()[2])
+
+
+def login(driver, username, password):
+    try:
+        LOGGER.info("Requesting page: " + NIKE_URL)
+        driver.get(NIKE_URL)
+    except TimeoutException:
+        LOGGER.info("Page load timed out but continuing anyway")
+
+    LOGGER.info("Waiting for login button to become clickable")
+    wait_until_clickable(driver=driver, xpath="//li[@js-hook='exp-join-login']/button")
+
+    LOGGER.info("Clicking login button")
+    driver.find_element_by_xpath("//li[@js-hook='exp-join-login']/button").click()
+
+    LOGGER.info("Waiting for login fields to become visible")
+    wait_until_visible(driver=driver, xpath="//input[@name='emailAddress']")
+
+    LOGGER.info("Entering username and password")
+    email_input = driver.find_element_by_xpath("//input[@name='emailAddress']")
+    email_input.clear()
+    email_input.send_keys(username)
+    password_input = driver.find_element_by_xpath("//input[@name='password']")
+    password_input.clear()
+    password_input.send_keys(password)
+
+    LOGGER.info("Logging in")
+    driver.find_element_by_xpath("//input[@value='ANMELDEN']").click()
+    wait_until_visible(driver=driver, xpath="//span[text()='Mein Konto']")
+
+    LOGGER.info("Successfully logged in")
+
+def wait_until_clickable(driver, xpath=None, class_name=None, duration=10000, frequency=0.01):
+    if xpath:
+        WebDriverWait(driver, duration, frequency).until(EC.element_to_be_clickable((By.XPATH, xpath)))
+    elif class_name:
+        WebDriverWait(driver, duration, frequency).until(EC.element_to_be_clickable((By.CLASS_NAME, class_name)))
+
+
+def wait_until_visible(driver, xpath=None, class_name=None, duration=10000, frequency=0.01):
+    if xpath:
+        WebDriverWait(driver, duration, frequency).until(EC.visibility_of_element_located((By.XPATH, xpath)))
+    elif class_name:
+        WebDriverWait(driver, duration, frequency).until(EC.visibility_of_element_located((By.CLASS_NAME, class_name)))
 
 def main():
     parser = argparse.ArgumentParser(description='Processing input values for run')
@@ -26,8 +104,8 @@ def main():
     parser.add_argument("--shoe_size", required=True)
     parser.add_argument("--login_time", default=None)
     parser.add_argument("--release_time", default=None)
-    #parser.add_argument("--screenshot_path", default=None)
-    #parser.add_argument("--html_path", default=None)
+    parser.add_argument("--screenshot_path", default=None)
+    parser.add_argument("--html_path", default=None)
     parser.add_argument("--page_load_timeout", type=int, default=2)
     parser.add_argument("--driver_type", default="chrome", choices=("firefox", "chrome"))
     parser.add_argument("--headless", action="store_true")
@@ -35,7 +113,24 @@ def main():
     parser.add_argument("--purchase", action="store_true")
     parser.add_argument("--num_retries", type=int, default=1)
     args = parser.parse_args()
-    print(args.username)
     driver = None
+
+    if args.driver_type == "chrome":
+        options = webdriver.ChromeOptions()
+        if args.headless:
+            options.add_argument("headless")
+        if sys.platform == "win32":
+            executable_path = "./bin/win_chromedriver.exe"
+        else:
+            raise Exception("Unsupported operating system. Please add your own Selenium driver for it.")
+        driver = webdriver.Chrome(executable_path=executable_path, options=options)
+    else:
+        raise Exception("Unsupported browser. Please use chrome for now")
+
+    run(driver=driver, username=args.username, password=args.password, url=args.url, shoe_size=args.shoe_size,
+        login_time=args.login_time, release_time=args.release_time, page_load_timeout=args.page_load_timeout,
+        screenshot_path=args.screenshot_path, html_path=args.html_path, select_payment=args.select_payment,
+        purchase=args.purchase, num_retries=args.num_retries)
+
 
 main()
