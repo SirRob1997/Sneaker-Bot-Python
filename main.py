@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import six
 import pause
 import argparse
@@ -35,7 +36,7 @@ logging.config.dictConfig({
     }
 })
 
-NIKE_URL = "https://www.nike.com/de/de_de/"
+NIKE_URL = "https://www.nike.com/de/de_de"
 LOGGER = logging.getLogger()
 
 def run(driver, username, password, url, shoe_size, login_time = None, release_time=None, page_load_timeout=None, screenshot_path=None, html_path=None, select_payment=False, purchase=False, num_retries=None):
@@ -78,8 +79,18 @@ def login(driver, username, password):
     except TimeoutException:
         LOGGER.info("Page load timed out but continuing anyway")
 
+    #We swith to the MEN tab here to simulate user interaction, because the "login" button doesn't always show
+    LOGGER.info("Waiting for Men button to become clickable")
+    wait_until_clickable(driver=driver, xpath="//a[@class='nav-brand fs16-nav-sm prl5-sm pt6-sm pb6-sm nav-uppercase d-sm-ib va-sm-m']", duration=10)
+
+    LOGGER.info("Clicking men button")
+    driver.find_element_by_xpath("//a[@class='nav-brand fs16-nav-sm prl5-sm pt6-sm pb6-sm nav-uppercase d-sm-ib va-sm-m']").click()
+
+    LOGGER.info("Waiting for men label to be visible")
+    wait_until_visible(driver=driver, xpath="//span[@class='nike-cq-subtitle-line-1 nike-cq-title-line nike-cq-line1 nsg-text--dark-grey nike-cq-font60px nike-cq-nospacing nsg-font-family--platform']")
+
     LOGGER.info("Waiting for login button to become clickable")
-    wait_until_clickable(driver=driver, xpath="//button[@class='nav-btn p0-sm prl3-sm pt2-sm pb2-sm fs12-nav-sm d-sm-b nav-color-grey hover-color-black']")
+    wait_until_clickable(driver=driver, xpath="//button[@class='nav-btn p0-sm prl3-sm pt2-sm pb2-sm fs12-nav-sm d-sm-b nav-color-grey hover-color-black']", duration=10)
 
     LOGGER.info("Clicking login button")
     driver.find_element_by_xpath("//button[@class='nav-btn p0-sm prl3-sm pt2-sm pb2-sm fs12-nav-sm d-sm-b nav-color-grey hover-color-black']").click()
@@ -122,10 +133,12 @@ def select_shoe_size(driver, shoe_size):
     driver.find_element_by_id("skuAndSize").click()
 
     LOGGER.info("Waiting for size dropdown to appear")
-    wait_until_visible(driver, xpath="//select/option", duration=10)
+    wait_until_visible(driver, xpath="//option[text()='{}']".format("EU 40"), duration=10)
 
     LOGGER.info("Selecting size from dropdown")
     driver.find_element_by_id("skuAndSize").find_element_by_xpath("//option[text()='{}']".format(shoe_size)).click()
+
+    LOGGER.info("Selected size "+ shoe_size +" from dropdown")
 
 def main():
     parser = argparse.ArgumentParser(description='Processing input values for run')
