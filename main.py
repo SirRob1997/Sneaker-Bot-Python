@@ -42,6 +42,7 @@ def run(driver, username, password, url, shoe_size, login_time = None, release_t
     driver.maximize_window()
     driver.set_page_load_timeout(page_load_timeout)
 
+    #Starting login process
     if login_time:
         LOGGER.info("Waiting until login time: " + login_time)
         pause.until(date_parser.parse(login_time))
@@ -52,6 +53,23 @@ def run(driver, username, password, url, shoe_size, login_time = None, release_t
         LOGGER.exception("Failed to login: " + str(e))
         six.reraise(Exception, e, sys.exc_info()[2])
 
+    if release_time:
+        LOGGER.info("Waiting until release time: " + release_time)
+        pause.until(date_parser.parse(release_time))
+
+    #Starting page request process
+    num_retries_attempted = 0
+    try:
+        LOGGER.info("Requesting page: " + url)
+        driver.get(url)
+    except TimeoutException:
+        LOGGER.info("Page load timed out but continuing anyway")
+
+    try:
+        select_shoe_size(driver=driver, shoe_size=shoe_size)
+    except Exception as e:
+        # If we fail to select shoe size, try to buy anyway
+        LOGGER.exception("Failed to select shoe size: " + str(e))
 
 def login(driver, username, password):
     try:
@@ -95,6 +113,20 @@ def wait_until_visible(driver, xpath=None, class_name=None, duration=10000, freq
         WebDriverWait(driver, duration, frequency).until(EC.visibility_of_element_located((By.XPATH, xpath)))
     elif class_name:
         WebDriverWait(driver, duration, frequency).until(EC.visibility_of_element_located((By.CLASS_NAME, class_name)))
+
+def select_shoe_size(driver, shoe_size):
+    LOGGER.info("Waiting for size dropdown button to become clickable")
+    wait_until_clickable(driver, xpath="//select[@id='skuAndSize']", duration=10)
+
+    LOGGER.info("Clicking size dropdown button")
+    driver.find_element_by_id("skuAndSize").click()
+
+    LOGGER.info("Waiting for size dropdown to appear")
+    wait_until_visible(driver, class_name="expanded", duration=10)
+
+    #LOGGER.info("Selecting size from dropdown")
+    #driver.find_element_by_class_name("expanded").find_element_by_xpath(
+        #"//button[text()='{}']".format(shoe_size)).click()
 
 def main():
     parser = argparse.ArgumentParser(description='Processing input values for run')
